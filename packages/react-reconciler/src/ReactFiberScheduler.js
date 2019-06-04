@@ -659,7 +659,7 @@ export function batchedUpdates<A, R>(fn: A => R, a: A): R {
     flushSyncCallbackQueue();
   }
 }
-
+// 非批量更新操作
 export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   if (workPhase !== BatchedPhase && workPhase !== FlushSyncPhase) {
     // We're not inside batchedUpdates or flushSync, so unbatchedUpdates is
@@ -669,6 +669,7 @@ export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   const prevWorkPhase = workPhase;
   workPhase = LegacyUnbatchedPhase;
   try {
+    // 运行入参函数且返回执行结果
     return fn(a);
   } finally {
     workPhase = prevWorkPhase;

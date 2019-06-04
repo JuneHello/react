@@ -118,16 +118,18 @@ function FiberRootNode(containerInfo, tag, hydrate) {
     this.pendingInteractionMap = new Map();
   }
 }
-
+// 最重要的是一个名叫 current的属性，这个current属性在虚拟dom渲染过程的时候被当做第一参数传入了渲染核心函数 enqueueUpdate中。
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
   hydrate: boolean,
 ): FiberRoot {
+    // 创建一个FiberRootNode
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+  // 创建一个fiber， FiberNode
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;

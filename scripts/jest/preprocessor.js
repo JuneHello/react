@@ -43,6 +43,7 @@ const babelOptions = {
     require.resolve('../babel/transform-prevent-infinite-loops'),
   ],
   retainLines: true,
+  sourceMaps: 'both'
 };
 
 module.exports = {

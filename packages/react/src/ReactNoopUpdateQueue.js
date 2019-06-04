@@ -101,8 +101,8 @@ const ReactNoopUpdateQueue = {
    * @internal
    */
   enqueueSetState: function(
-    publicInstance,
-    partialState,
+    publicInstance,//实例this
+    partialState,// 新的state
     callback,
     callerName,
   ) {

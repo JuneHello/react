@@ -367,6 +367,7 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
   return IndeterminateComponent;
 }
 
+// workInProgress tree是reconcile过程中从fiber tree建立的当前进度快照，用于断点恢复
 // This is used to create an alternate fiber to do work on.
 export function createWorkInProgress(
   current: Fiber,
@@ -459,7 +460,7 @@ export function createWorkInProgress(
 
   return workInProgress;
 }
-
+// 确定了mode的值，用来决定创造出的current是个具有根节点属性的东西，在ReactFiberRoot文件中用到current
 export function createHostRootFiber(tag: RootTag): Fiber {
   let mode;
   if (tag === ConcurrentRoot) {
@@ -477,7 +478,7 @@ export function createHostRootFiber(tag: RootTag): Fiber {
     mode |= ProfileMode;
   }
 
-  return createFiber(HostRoot, null, null, mode);
+  return createFiber(HostRoot, null, null, mode); // HostRoot = 3
 }
 
 export function createFiberFromTypeAndProps(

@@ -155,7 +155,7 @@ if (__DEV__) {
     currentlyProcessingQueue = null;
   };
 }
-
+// UpdateQueue，是一个链表，有firstUpdate和lastUpdate两个属性，指向第一个和最后一个update对象
 export function createUpdateQueue<State>(baseState: State): UpdateQueue<State> {
   const queue: UpdateQueue<State> = {
     baseState,
@@ -231,7 +231,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   let queue2;
   if (alternate === null) {
     // There's only one fiber.
-    queue1 = fiber.updateQueue;
+    queue1 = fiber.updateQueue;//每个fiber有一个属性updateQueue指向其对应的更新队列
     queue2 = null;
     if (queue1 === null) {
       queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState);

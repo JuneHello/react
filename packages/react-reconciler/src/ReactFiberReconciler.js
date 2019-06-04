@@ -118,8 +118,8 @@ function getContextForSubtree(
 
 function scheduleRootUpdate(
   current: Fiber,
-  element: ReactNodeList,
-  expirationTime: ExpirationTime,
+  element: ReactNodeList,// 虚拟dom树
+  expirationTime: ExpirationTime,// 更新优先级， 越大 优先级越高了
   suspenseConfig: null | SuspenseConfig,
   callback: ?Function,
 ) {
@@ -140,7 +140,16 @@ function scheduleRootUpdate(
       );
     }
   }
-
+// createUpdate 返回以下对象
+//   return {
+//     expirationTime,
+//     suspenseConfig,
+//     tag: UpdateState,
+//     payload: null,
+//     callback: null,
+//     next: null,
+//     nextEffect: null,
+//   };
   const update = createUpdate(expirationTime, suspenseConfig);
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -160,6 +169,7 @@ function scheduleRootUpdate(
   if (revertPassiveEffectsChange) {
     flushPassiveEffects();
   }
+  // 开始加入更新队列了
   enqueueUpdate(current, update);
   scheduleWork(current, expirationTime);
 
@@ -168,9 +178,9 @@ function scheduleRootUpdate(
 
 export function updateContainerAtExpirationTime(
   element: ReactNodeList,
-  container: OpaqueRoot,
+  container: OpaqueRoot,// 和fiber相关的_internalRoot
   parentComponent: ?React$Component<any, any>,
-  expirationTime: ExpirationTime,
+  expirationTime: ExpirationTime,// 计算出来的渲染优先级
   suspenseConfig: null | SuspenseConfig,
   callback: ?Function,
 ) {
@@ -189,7 +199,7 @@ export function updateContainerAtExpirationTime(
     }
   }
 
-  const context = getContextForSubtree(parentComponent);
+  const context = getContextForSubtree(parentComponent);// 获取到父组件内容
   if (container.context === null) {
     container.context = context;
   } else {
@@ -296,13 +306,14 @@ export function createContainer(
 
 export function updateContainer(
   element: ReactNodeList,
-  container: OpaqueRoot,
-  parentComponent: ?React$Component<any, any>,
+  container: OpaqueRoot, //之前造出来的root中和fiber相关的_internalRoot
+  parentComponent: ?React$Component<any, any>, // 父组件(null 或 父组件)
   callback: ?Function,
 ): ExpirationTime {
   const current = container.current;
   const currentTime = requestCurrentTime();
   const suspenseConfig = requestCurrentSuspenseConfig();
+  // 计算优先级
   const expirationTime = computeExpirationForFiber(
     currentTime,
     current,

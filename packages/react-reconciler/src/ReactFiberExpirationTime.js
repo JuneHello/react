@@ -20,9 +20,10 @@ import {
 
 export type ExpirationTime = number;
 
+// ？expirationTime 不为 Sync的时候，会启动异步模式，则其值越大，优先级越高
 export const NoWork = 0;
 export const Never = 1;
-export const Sync = MAX_SIGNED_31_BIT_INT;
+export const Sync = MAX_SIGNED_31_BIT_INT; // ？同步优先级，类似于 React 16 之前的 stack 情况，程序会按照顺序执行下去，直到结束
 export const Batched = Sync - 1;
 
 const UNIT_SIZE = 10;

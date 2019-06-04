@@ -486,7 +486,7 @@ setBatchingImplementation(
 );
 
 let warnedAboutHydrateAPI = false;
-
+//
 function legacyCreateRootFromDOMContainer(
   container: DOMContainer,
   forceHydrate: boolean,
@@ -531,13 +531,13 @@ function legacyCreateRootFromDOMContainer(
   // Legacy roots are not batched.
   return new ReactSyncRoot(container, LegacyRoot, shouldHydrate);
 }
-
+// 把虚拟的dom树渲染到真实的dom容器中
 function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?React$Component<any, any>,
-  children: ReactNodeList,
-  container: DOMContainer,
-  forceHydrate: boolean,
-  callback: ?Function,
+  parentComponent: ?React$Component<any, any>, //父组件(null 或 父组件)
+  children: ReactNodeList, // element 虚拟dom树  
+  container: DOMContainer, // html中的dom根对象
+  forceHydrate: boolean, // false 服务器端渲染标识
+  callback: ?Function, // 回调函数  没有
 ) {
   if (__DEV__) {
     topLevelUpdateWarnings(container);
@@ -546,6 +546,7 @@ function legacyRenderSubtreeIntoContainer(
 
   // TODO: Without `any` type, Flow says "Property cannot be accessed on any
   // member of intersection type." Whyyyyyy.
+  // 取root对象，一般如果非服务器端渲染这个root是不存在的
   let root: _ReactSyncRoot = (container._reactRootContainer: any);
   let fiberRoot;
   if (!root) {
@@ -554,7 +555,7 @@ function legacyRenderSubtreeIntoContainer(
       container,
       forceHydrate,
     );
-    fiberRoot = root._internalRoot;
+    fiberRoot = root._internalRoot; // 之前造出来的root中和fiber相关的_internalRoot
     if (typeof callback === 'function') {
       const originalCallback = callback;
       callback = function() {
