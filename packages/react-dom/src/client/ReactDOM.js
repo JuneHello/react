@@ -486,7 +486,7 @@ setBatchingImplementation(
 );
 
 let warnedAboutHydrateAPI = false;
-//
+// 就是把 root dom， container 内的其余节点清空创建一个 new ReactRoot 实例， 最终得到的React根容器对象
 function legacyCreateRootFromDOMContainer(
   container: DOMContainer,
   forceHydrate: boolean,
@@ -494,9 +494,10 @@ function legacyCreateRootFromDOMContainer(
   const shouldHydrate =
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
   // First clear any existing content.
-  if (!shouldHydrate) {
+  if (!shouldHydrate) { // false 客户端渲染
     let warned = false;
     let rootSibling;
+    // 把 root 的所有子节点删掉
     while ((rootSibling = container.lastChild)) {
       if (__DEV__) {
         if (
@@ -528,13 +529,13 @@ function legacyCreateRootFromDOMContainer(
     }
   }
 
-  // Legacy roots are not batched.
+  // Legacy roots are not batched.   LegacyRoot=0
   return new ReactSyncRoot(container, LegacyRoot, shouldHydrate);
 }
 // 把虚拟的dom树渲染到真实的dom容器中
 function legacyRenderSubtreeIntoContainer(
   parentComponent: ?React$Component<any, any>, //父组件(null 或 父组件)
-  children: ReactNodeList, // element 虚拟dom树  
+  children: ReactNodeList, // element 虚拟dom树，？是否为最后解析出来的（TODO）
   container: DOMContainer, // html中的dom根对象
   forceHydrate: boolean, // false 服务器端渲染标识
   callback: ?Function, // 回调函数  没有
@@ -549,7 +550,7 @@ function legacyRenderSubtreeIntoContainer(
   // 取root对象，一般如果非服务器端渲染这个root是不存在的
   let root: _ReactSyncRoot = (container._reactRootContainer: any);
   let fiberRoot;
-  if (!root) {
+  if (!root) { //初次渲染root不存在
     // Initial mount
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
@@ -598,6 +599,7 @@ function createPortal(
 const ReactDOM: Object = {
   createPortal,
 
+  // 用来得到实际Dom的，为什么出现---对于react自定义组件，比如<NavBox />这种，用ref来获取这种组件获取到的这是组件定义的对象的实例，findDOMNode会得到NavBox组件中render方法返回的dom元素。
   findDOMNode(
     componentOrElement: Element | ?React$Component<any, any>,
   ): null | Element | Text {
@@ -630,6 +632,7 @@ const ReactDOM: Object = {
     return findHostInstance(componentOrElement);
   },
 
+  // 服务端渲染，请使用ReactDOM.hydrate方法替换ReactDOM.render
   hydrate(element: React$Node, container: DOMContainer, callback: ?Function) {
     invariant(
       isValidContainer(container),

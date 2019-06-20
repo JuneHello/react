@@ -226,7 +226,7 @@ function appendUpdateToQueue<State>(
 
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
-  const alternate = fiber.alternate;
+  const alternate = fiber.alternate; // alternate属性指向workInProgress节点,alternate是一个镜像fiber，diff产生出的变化会标记在镜像fiber上。而alternate就是链接当前fiber tree和镜像fiber tree, 用于断点恢复。
   let queue1;
   let queue2;
   if (alternate === null) {
@@ -247,7 +247,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
         queue2 = alternate.updateQueue = createUpdateQueue(
           alternate.memoizedState,
         );
-      } else {
+      } else { //fiber.updateQueue为空，alternate.updateQueue不为空（什么情况下会这样）
         // Only one fiber has an update queue. Clone to create a new one.
         queue1 = fiber.updateQueue = cloneUpdateQueue(queue2);
       }
@@ -260,6 +260,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       }
     }
   }
+  // 开始进入链表
   if (queue2 === null || queue1 === queue2) {
     // There's only a single queue.
     appendUpdateToQueue(queue1, update);
@@ -276,7 +277,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       // because of structural sharing. So, only append to one of the lists.
       appendUpdateToQueue(queue1, update);
       // But we still need to update the `lastUpdate` pointer of queue2.
-      queue2.lastUpdate = update;
+      queue2.lastUpdate = update; // 更新链表指向
     }
   }
 

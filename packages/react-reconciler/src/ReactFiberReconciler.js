@@ -104,11 +104,11 @@ function getContextForSubtree(
   }
 
   const fiber = getInstance(parentComponent);
-  const parentContext = findCurrentUnmaskedContext(fiber);
+  const parentContext = findCurrentUnmaskedContext(fiber);// 一直寻找fiber的父级node的context
 
   if (fiber.tag === ClassComponent) {
     const Component = fiber.type;
-    if (isLegacyContextProvider(Component)) {
+    if (isLegacyContextProvider(Component)) {// 老版本的Context
       return processChildContext(fiber, Component, parentContext);
     }
   }
@@ -118,8 +118,8 @@ function getContextForSubtree(
 
 function scheduleRootUpdate(
   current: Fiber,
-  element: ReactNodeList,// 虚拟dom树
-  expirationTime: ExpirationTime,// 更新优先级， 越大 优先级越高了
+  element: ReactNodeList, // 虚拟dom树
+  expirationTime: ExpirationTime, // 更新优先级， 越大 优先级越高了
   suspenseConfig: null | SuspenseConfig,
   callback: ?Function,
 ) {
@@ -169,8 +169,9 @@ function scheduleRootUpdate(
   if (revertPassiveEffectsChange) {
     flushPassiveEffects();
   }
-  // 开始加入更新队列了
+  // 把更新的对象加入到 fiber 对象上的 updateQueue 里
   enqueueUpdate(current, update);
+  // 开始进行调度
   scheduleWork(current, expirationTime);
 
   return expirationTime;
@@ -178,9 +179,9 @@ function scheduleRootUpdate(
 
 export function updateContainerAtExpirationTime(
   element: ReactNodeList,
-  container: OpaqueRoot,// 和fiber相关的_internalRoot
+  container: OpaqueRoot, // 和fiber相关的_internalRoot
   parentComponent: ?React$Component<any, any>,
-  expirationTime: ExpirationTime,// 计算出来的渲染优先级
+  expirationTime: ExpirationTime, // 计算出来的渲染优先级
   suspenseConfig: null | SuspenseConfig,
   callback: ?Function,
 ) {
@@ -305,12 +306,12 @@ export function createContainer(
 }
 
 export function updateContainer(
-  element: ReactNodeList,
+  element: ReactNodeList, // element 虚拟dom树
   container: OpaqueRoot, //之前造出来的root中和fiber相关的_internalRoot
   parentComponent: ?React$Component<any, any>, // 父组件(null 或 父组件)
   callback: ?Function,
 ): ExpirationTime {
-  const current = container.current;
+  const current = container.current; // 是个具有根节点属性的FiberNode
   const currentTime = requestCurrentTime();
   const suspenseConfig = requestCurrentSuspenseConfig();
   // 计算优先级

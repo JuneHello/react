@@ -8,7 +8,7 @@
  */
 
 export type HookEffectTag = number;
-
+// React内置任务
 export const NoEffect = /*             */ 0b00000000;
 export const UnmountSnapshot = /*      */ 0b00000010;
 export const UnmountMutation = /*      */ 0b00000100;

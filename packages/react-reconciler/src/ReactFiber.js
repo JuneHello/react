@@ -246,6 +246,7 @@ function FiberNode(
   this.key = key;
   this.elementType = null;
   this.type = null;
+  // stateNode用于记录当前 Fiber 所对应的真实 DOM 节点 或者 当前虚拟组件的实例，这么做的原因第一是为了实现 Ref ，第二是为了实现 DOM 的跟踪
   this.stateNode = null;
 
   // Fiber
@@ -265,6 +266,7 @@ function FiberNode(
   this.mode = mode;
 
   // Effects
+  // effectTag 记录每个节点 Diff 后需要变更的状态，比如删除，移动，插入，替换，更新等...
   this.effectTag = NoEffect;
   this.nextEffect = null;
 
@@ -274,6 +276,9 @@ function FiberNode(
   this.expirationTime = NoWork;
   this.childExpirationTime = NoWork;
 
+  // 当我们调用 ReactDOM.render 或者 setState 之后，会生成一颗树叫做：workInProgress tree，
+  // 这一颗树就是我们所谓的新树用来与我们的旧树进行对比，新的树和旧的树的 Fiber 是完全不一样的
+  // 我们需要 alternate 属性去链接新树和旧树
   this.alternate = null;
 
   if (enableProfilerTimer) {
@@ -468,7 +473,7 @@ export function createHostRootFiber(tag: RootTag): Fiber {
   } else if (tag === BatchedRoot) {
     mode = BatchedMode | StrictMode;
   } else {
-    mode = NoMode;
+    mode = NoMode; // 同步模式
   }
 
   if (enableProfilerTimer && isDevToolsPresent) {

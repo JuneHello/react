@@ -270,7 +270,7 @@ export function computeExpirationForFiber(
   suspenseConfig: null | SuspenseConfig,
 ): ExpirationTime {
   const mode = fiber.mode;
-  if ((mode & BatchedMode) === NoMode) {
+  if ((mode & BatchedMode) === NoMode) { // NoMode 0b0000; 同步模式
     return Sync;
   }
 
@@ -1075,7 +1075,7 @@ function workLoop() {
     workInProgress = performUnitOfWork(workInProgress);
   }
 }
-
+// performUnitOfWork 不断的检测当前帧是否还剩余时间，进行 WorkInProgress tree 的迭代
 function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't

@@ -99,7 +99,7 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   this.containerInfo = containerInfo;
   this.pendingChildren = null;
   this.pingCache = null;
-  this.finishedExpirationTime = NoWork;
+  this.finishedExpirationTime = NoWork;// NoWork=0
   this.finishedWork = null;
   this.timeoutHandle = noTimeout;
   this.context = null;
@@ -124,14 +124,13 @@ export function createFiberRoot(
   tag: RootTag,
   hydrate: boolean,
 ): FiberRoot {
-    // 创建一个FiberRootNode
+  // 创建一个FiberRootNode
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
 
-  // Cyclic construction. This cheats the type system right now because
-  // stateNode is any.
+  // Cyclic construction. This cheats the type system right now because stateNode is any.
   // 创建一个fiber， FiberNode
   const uninitializedFiber = createHostRootFiber(tag);
-  root.current = uninitializedFiber;
+  root.current = uninitializedFiber; // 确定了mode的值，用来决定创造出的current是个具有根节点属性的FiberNode
   uninitializedFiber.stateNode = root;
 
   return root;
