@@ -238,6 +238,7 @@ function warnOnFunctionType() {
 // to be able to optimize each path individually by branching early. This needs
 // a compiler or we can do it manually. Helpers that don't need this branching
 // live outside of this function.
+// 创建或者更新 FiberNode 的child，得到下一个工作循环的入参（也是FiberNode
 function ChildReconciler(shouldTrackSideEffects) {
   function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {
     if (!shouldTrackSideEffects) {
@@ -273,7 +274,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     // assuming that after the first child we've already added everything.
     let childToDelete = currentFirstChild;
     while (childToDelete !== null) {
-      deleteChild(returnFiber, childToDelete);
+      deleteChild(returnFiber, childToDelete); // 将单个childToDelete加入Effect，effectTag=Deletion
       childToDelete = childToDelete.sibling;
     }
     return null;
@@ -736,6 +737,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return knownKeys;
   }
 
+  // isArray(newChildren)，reconcileChildrenArray返回的也是一个节点，返回diff完毕的新的fiberNode链表。由于是链表结构，知道第一个节点，就能知道整个链路。
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -777,6 +779,8 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    // shouldTrackSideEffects 为传递进来的参数，true/false
+    // 第一次遍历：先遍历新元素链，找到index相同的元素，主要判断key是否相同，相同的话update老节点生成新节点newFiber。如果遍历到的相同index而元素不相等则结束第一个循环。
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -804,7 +808,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         if (oldFiber && newFiber.alternate === null) {
           // We matched the slot, but we didn't reuse the existing fiber, so we
           // need to delete the existing child.
-          deleteChild(returnFiber, oldFiber);
+          deleteChild(returnFiber, oldFiber); // why delete oldFiber
         }
       }
       lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
@@ -822,12 +826,14 @@ function ChildReconciler(shouldTrackSideEffects) {
       oldFiber = nextOldFiber;
     }
 
+    // 新链结束,老链没有：把老链中剩余的fiber都删除
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
 
+    // 老链结束,新链没有：把新链中剩下的都插入
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
@@ -852,9 +858,11 @@ function ChildReconciler(shouldTrackSideEffects) {
       return resultingFirstChild;
     }
 
+    // 其他情况,1,把老链按key放入map里.有key的话，按照key值放入oldFiber，没有的话直接把index当作key
     // Add all children to a key map for quick lookups.
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
 
+    // 遍历新链，从老链中找和新链key相同的fiber，更新成newfiber
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
       const newFiber = updateFromMap(
@@ -867,6 +875,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       if (newFiber !== null) {
         if (shouldTrackSideEffects) {
           if (newFiber.alternate !== null) {
+            // 存在workInProgress，在老节点中删除对应key的fiberNode
             // The new fiber is a work in progress, but if there exists a
             // current, that means that we reused the fiber. We need to delete
             // it from the child list so that we don't add it to the deletion
@@ -887,6 +896,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
 
     if (shouldTrackSideEffects) {
+      // 遍历处理完所有newChildren生成新链后，删除老链中剩下的元素
       // Any existing children that weren't consumed above were deleted. We need
       // to add them to the deletion list.
       existingChildren.forEach(child => deleteChild(returnFiber, child));
@@ -1112,6 +1122,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return created;
   }
 
+  // 比较key和type，如果相同，复用fiber，删除多余的元素（currentFirstChild的sibling），如果不同，调用createFiberFromElement，返回新创建的。
   function reconcileSingleElement(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,

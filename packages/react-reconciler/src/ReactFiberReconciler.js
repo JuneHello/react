@@ -171,7 +171,7 @@ function scheduleRootUpdate(
   }
   // 把更新的对象加入到 fiber 对象上的 updateQueue 里
   enqueueUpdate(current, update);
-  // 开始进行调度
+  // 开始进行调度,根据任务的优先级进行更新
   scheduleWork(current, expirationTime);
 
   return expirationTime;
@@ -312,9 +312,9 @@ export function updateContainer(
   callback: ?Function,
 ): ExpirationTime {
   const current = container.current; // 是个具有根节点属性的FiberNode
-  const currentTime = requestCurrentTime();
+  const currentTime = requestCurrentTime();// 创建一个时间差
   const suspenseConfig = requestCurrentSuspenseConfig();
-  // 计算优先级
+  // 计算优先级，  计算出一个时间，ConcurrentMode 会用到, 计算出的是优先级时间
   const expirationTime = computeExpirationForFiber(
     currentTime,
     current,

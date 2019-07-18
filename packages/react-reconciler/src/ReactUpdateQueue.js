@@ -229,6 +229,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   const alternate = fiber.alternate; // alternate属性指向workInProgress节点,alternate是一个镜像fiber，diff产生出的变化会标记在镜像fiber上。而alternate就是链接当前fiber tree和镜像fiber tree, 用于断点恢复。
   let queue1;
   let queue2;
+  // 创建链表
   if (alternate === null) {
     // There's only one fiber.
     queue1 = fiber.updateQueue;//每个fiber有一个属性updateQueue指向其对应的更新队列
@@ -260,7 +261,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       }
     }
   }
-  // 开始进入链表
+  // 开始进入链表，往链表中加入update，
   if (queue2 === null || queue1 === queue2) {
     // There's only a single queue.
     appendUpdateToQueue(queue1, update);
@@ -357,7 +358,9 @@ function getStateFromUpdate<State>(
   switch (update.tag) {
     case ReplaceState: {
       const payload = update.payload;
+      // 两种不同的setState方式：第一个参数是一个对象或者一个函数
       if (typeof payload === 'function') {
+        // this.setState((prevState, props) => ({}));当setState的参数是function的时候
         // Updater function
         if (__DEV__) {
           enterDisallowedContextReadInDEV();
@@ -411,6 +414,7 @@ function getStateFromUpdate<State>(
         return prevState;
       }
       // Merge the partial state and the previous state.
+      // Object.assign这里是第一层深拷贝，如果state比较复杂，就会存在深层属性浅拷贝的现象
       return Object.assign({}, prevState, partialState);
     }
     case ForceUpdate: {
@@ -421,6 +425,7 @@ function getStateFromUpdate<State>(
   return prevState;
 }
 
+// 处理更新队列，得出新的state放在memoizedState
 export function processUpdateQueue<State>(
   workInProgress: Fiber,
   queue: UpdateQueue<State>,

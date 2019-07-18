@@ -182,9 +182,9 @@ export function applyDerivedStateFromProps(
 
 const classComponentUpdater = {
   isMounted,
-  enqueueSetState(inst, payload, callback) {
-    const fiber = getInstance(inst);
-    const currentTime = requestCurrentTime();
+  enqueueSetState(inst, payload, callback) { // 所执行的顺序跟 ReactFiberReconclier.js 的 updateContainer 几乎是一模一样的
+    const fiber = getInstance(inst); // 从 Map 对象中获取 Fiber 对象
+    const currentTime = requestCurrentTime(); // 创建当前时间
     const suspenseConfig = requestCurrentSuspenseConfig();
     const expirationTime = computeExpirationForFiber(
       currentTime,

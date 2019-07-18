@@ -242,11 +242,11 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
-  this.tag = tag;
+  this.tag = tag; // 标记不同的组件类型，不同的更新方式
   this.key = key;
-  this.elementType = null;
-  this.type = null;
-  // stateNode用于记录当前 Fiber 所对应的真实 DOM 节点 或者 当前虚拟组件的实例，这么做的原因第一是为了实现 Ref ，第二是为了实现 DOM 的跟踪
+  this.elementType = null; // createElement 第一个参数，组件 或者 标签
+  this.type = null;//  记录异步组件 resolved 后是 class 还是 function 组件
+  // stateNode用于记录当前 Fiber 所对应的真实 DOM 节点 或者 当前虚拟组件的实例，这么做的原因第一是为了实现 Ref ，第二是为了实现 DOM 的跟踪，function 没有实例就没 stateNode
   this.stateNode = null;
 
   // Fiber
@@ -257,16 +257,17 @@ function FiberNode(
 
   this.ref = null;
 
-  this.pendingProps = pendingProps;
-  this.memoizedProps = null;
-  this.updateQueue = null;
-  this.memoizedState = null;
+  this.pendingProps = pendingProps;// 每个创建的新 props
+  this.memoizedProps = null;// 老 props
+  this.updateQueue = null;// 节点创建的 update 对象 queue 
+  this.memoizedState = null;// 老 state，新 state 是由 updateQueue 计算出来的然后覆盖这里
   this.contextDependencies = null;
 
-  this.mode = mode;
+  this.mode = mode; // 标记时创建，继承父节点 mod
 
   // Effects
-  // effectTag 记录每个节点 Diff 后需要变更的状态，比如删除，移动，插入，替换，更新等...
+  // effectTag 每个workInProgress tree节点上都有一个 effect list 用来存放diff结果，当前节点更新完毕会向上merge effect list（queue收集diff结果）
+  // 供后续commit阶段，对整个fiberTree 映射的dom 在effect list里的做删除，移动，插入，替换，更新等
   this.effectTag = NoEffect;
   this.nextEffect = null;
 
@@ -274,7 +275,7 @@ function FiberNode(
   this.lastEffect = null;
 
   this.expirationTime = NoWork;
-  this.childExpirationTime = NoWork;
+  this.childExpirationTime = NoWork; // 子节点更新的过期时间
 
   // 当我们调用 ReactDOM.render 或者 setState 之后，会生成一颗树叫做：workInProgress tree，
   // 这一颗树就是我们所谓的新树用来与我们的旧树进行对比，新的树和旧的树的 Fiber 是完全不一样的

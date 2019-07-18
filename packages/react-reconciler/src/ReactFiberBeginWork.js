@@ -663,6 +663,7 @@ function updateFunctionComponent(
   return workInProgress.child;
 }
 
+// 对未初始化的类组件进行初始化，对已经初始化的组件更新重用
 function updateClassComponent(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -713,6 +714,7 @@ function updateClassComponent(
       workInProgress.effectTag |= Placement;
     }
     // In the initial pass we might need to construct the instance.
+    // 如果还没创建实例，初始化
     constructClassInstance(
       workInProgress,
       Component,
@@ -728,6 +730,7 @@ function updateClassComponent(
     shouldUpdate = true;
   } else if (current === null) {
     // In a resume, we'll already have an instance we can reuse.
+    // 如果已经创建实例，则重用实例
     shouldUpdate = resumeMountClassInstance(
       workInProgress,
       Component,
@@ -766,6 +769,7 @@ function updateClassComponent(
   return nextUnitOfWork;
 }
 
+// 调用组件实例的render函数获取需渲染的子元素，并把子元素进行处理为Fiber类型，处理state和props
 function finishClassComponent(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -879,6 +883,7 @@ function pushHostRootContext(workInProgress) {
 
 function updateHostRoot(current, workInProgress, renderExpirationTime) {
   pushHostRootContext(workInProgress);
+  // ReactUpdateQueue.js文件，创建了UpdateQueue，
   const updateQueue = workInProgress.updateQueue;
   invariant(
     updateQueue !== null,
@@ -930,6 +935,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
     // Ensure that children mount into this root without tracking
     // side-effects. This ensures that we don't store Placement effects on
     // nodes that will be hydrated.
+    // mountChildFibers组件初始化时用的,所以不用clone fiber来diff，也不用产出effect list
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
@@ -939,6 +945,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   } else {
     // Otherwise reset hydration state in case we aborted and resumed another
     // root.
+    // 这个函数实现了对子fiber节点的reconciliation， shouldTrackSideEffects=true，
     reconcileChildren(
       current,
       workInProgress,
@@ -2183,6 +2190,7 @@ function remountFiber(
   }
 }
 
+// 根据Fiber对象的tag来对组件进行mount或update,每个工作的对象主要是处理workInProgress。这里通过workInProgress.tag区分出当前 FiberNode 的类型，然后进行对应的更新处理。
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,

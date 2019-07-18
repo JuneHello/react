@@ -247,7 +247,7 @@ let interruptedBy: Fiber | null = null;
 // In other words, because expiration times determine how updates are batched,
 // we want all updates of like priority that occur within the same event to
 // receive the same expiration time. Otherwise we get tearing.
-let currentEventTime: ExpirationTime = NoWork;
+let currentEventTime: ExpirationTime = NoWork; // NoWork = 0
 
 export function requestCurrentTime() {
   if (workPhase === RenderPhase || workPhase === CommitPhase) {
@@ -270,7 +270,7 @@ export function computeExpirationForFiber(
   suspenseConfig: null | SuspenseConfig,
 ): ExpirationTime {
   const mode = fiber.mode;
-  if ((mode & BatchedMode) === NoMode) { // NoMode 0b0000; 同步模式
+  if ((mode & BatchedMode) === NoMode) { // NoMode 0b0000;
     return Sync;
   }
 
@@ -342,7 +342,7 @@ export function scheduleUpdateOnFiber(
   fiber: Fiber,
   expirationTime: ExpirationTime,
 ) {
-  checkForNestedUpdates();
+  checkForNestedUpdates();// 检查是否嵌套跟新到50次，Maximum update depth exceeded
   warnAboutInvalidUpdatesOnClassComponentsInDEV(fiber);
 
   const root = markUpdateTimeFromFiberToRoot(fiber, expirationTime);
@@ -732,7 +732,7 @@ function prepareFreshStack(root, expirationTime) {
     }
   }
   workInProgressRoot = root;
-  workInProgress = createWorkInProgress(root.current, null, expirationTime);
+  workInProgress = createWorkInProgress(root.current, null, expirationTime); // 创建workInProgress，workLoopSync 需要
   renderExpirationTime = expirationTime;
   workInProgressRootExitStatus = RootIncomplete;
   workInProgressRootLatestProcessedExpirationTime = Sync;
@@ -1064,6 +1064,7 @@ function inferTimeFromExpirationTime(
 
 function workLoopSync() {
   // Already timed out, so perform work without checking if we need to yield.
+  // 是一个典型的递归的循环写法，这样写成循环，1和传统的递归改循环写法一样，避免调用栈不断堆叠以及调用栈溢出等问题；二来在结合其他Scheduler代码的辅助变量，可以实现遍历随时终止、随时恢复的效果。
   while (workInProgress !== null) {
     workInProgress = performUnitOfWork(workInProgress);
   }
@@ -1075,7 +1076,8 @@ function workLoop() {
     workInProgress = performUnitOfWork(workInProgress);
   }
 }
-// performUnitOfWork 不断的检测当前帧是否还剩余时间，进行 WorkInProgress tree 的迭代
+
+// performUnitOfWork不断的检测当前帧是否还剩余时间，进行 WorkInProgress tree 的迭代
 function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
@@ -1096,6 +1098,7 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
 
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
+  // 如果next不为空，就返回进入下一个performUnitOfWork，否则就进入completeUnitOfWork，next为空的时候会结束递归
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     next = completeUnitOfWork(unitOfWork);
@@ -1105,6 +1108,7 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   return next;
 }
 
+// 先将当前Fiber元素转换为真实DOM节点，然后在看有无兄弟节点，若有则返回给上层函数处理完后再调用此函数进行转换；否则查看有无父节点，若有则转换父节点
 function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1226,6 +1230,7 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
     const siblingFiber = workInProgress.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
+      // 继续进入performUnitOfWork循环
       return siblingFiber;
     }
     // Otherwise, return to the parent

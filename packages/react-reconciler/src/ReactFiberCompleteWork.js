@@ -147,6 +147,7 @@ if (supportsMutation) {
         node = node.child;
         continue;
       }
+
       if (node === workInProgress) {
         return;
       }
@@ -521,6 +522,7 @@ if (supportsMutation) {
   };
 }
 
+// completeWork主要是完成reconciliation阶段的扫尾工作，重点是对HostComponent的props进行diff，并标记更新
 function completeWork(
   current: Fiber | null,
   workInProgress: Fiber,
