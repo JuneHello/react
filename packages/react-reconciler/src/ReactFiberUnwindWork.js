@@ -96,7 +96,7 @@ function createRootErrorUpdate(
   update.tag = CaptureUpdate;
   // Caution: React DevTools currently depends on this property
   // being called "element".
-  update.payload = {element: null};
+  update.payload = {element: null}; //不渲染属性
   const error = errorInfo.value;
   update.callback = () => {
     onUncaughtError(error);
@@ -112,8 +112,9 @@ function createClassErrorUpdate(
 ): Update<mixed> {
   const update = createUpdate(expirationTime, null);
   update.tag = CaptureUpdate;
-  const getDerivedStateFromError = fiber.type.getDerivedStateFromError;
+  const getDerivedStateFromError = fiber.type.getDerivedStateFromError; // 为静态方法
   if (typeof getDerivedStateFromError === 'function') {
+    // 把返回的state作为update.payload，更新state
     const error = errorInfo.value;
     update.payload = () => {
       return getDerivedStateFromError(error);
@@ -199,6 +200,11 @@ function attachPingListener(
   }
 }
 
+// 向上遍历 class 组件找可以处理错误的 class 组件生命周期,一直找到 Root 节点执行内置错误处理
+// 给能处理错误的节点组件的 effect 都加了 ShouldCapture
+// 创建错误更新，入 workInProgress.updateQueue 更新队列来更新
+// getDerivedStateFromError 生命周期直接赋值在 update.payload 上
+
 function throwException(
   root: FiberRoot,
   returnFiber: Fiber,
@@ -206,9 +212,9 @@ function throwException(
   value: mixed,
   renderExpirationTime: ExpirationTime,
 ) {
-  // The source fiber did not complete.
+  // The source fiber did not complete.设置报错的节点effectTag加上Incomplete
   sourceFiber.effectTag |= Incomplete;
-  // Its effect list is no longer valid.
+  // Its effect list is no longer valid.清空effect链
   sourceFiber.firstEffect = sourceFiber.lastEffect = null;
 
   if (
@@ -216,7 +222,7 @@ function throwException(
     typeof value === 'object' &&
     typeof value.then === 'function'
   ) {
-    // This is a thenable.
+    // This is a thenable.promise对象，针对异步组件抛出的渲染组件
     const thenable: Thenable = (value: any);
 
     checkForWrongSuspensePriorityInDEV(sourceFiber);
@@ -347,11 +353,13 @@ function throwException(
   // over and traverse parent path again, this time treating the exception
   // as an error.
   renderDidError();
-  value = createCapturedValue(value, sourceFiber);
+  value = createCapturedValue(value, sourceFiber); // 包含错误调用链的错误信息
   let workInProgress = returnFiber;
   do {
+    // 开始循环找到第一个能处理错误的组件,（错误信息入栈在提交阶段调用),不然在HostRoot上调用，
     switch (workInProgress.tag) {
       case HostRoot: {
+        // 最终到了root还没有处理错误方法
         const errorInfo = value;
         workInProgress.effectTag |= ShouldCapture;
         workInProgress.expirationTime = renderExpirationTime;
@@ -383,7 +391,7 @@ function throwException(
             errorInfo,
             renderExpirationTime,
           );
-          enqueueCapturedUpdate(workInProgress, update);
+          enqueueCapturedUpdate(workInProgress, update); // 进去updateQueue
           return;
         }
         break;
@@ -394,6 +402,7 @@ function throwException(
   } while (workInProgress !== null);
 }
 
+// 只有 HostComponent, HostText, SuspenseComponent 有操作，其余也多是 pop context
 function unwindWork(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
@@ -406,6 +415,7 @@ function unwindWork(
       }
       const effectTag = workInProgress.effectTag;
       if (effectTag & ShouldCapture) {
+        // throwException 处理错误节点时给能处理错误的节点组件的 effect 都加了 ShouldCapture
         workInProgress.effectTag = (effectTag & ~ShouldCapture) | DidCapture;
         return workInProgress;
       }
@@ -420,6 +430,7 @@ function unwindWork(
         'The root failed to unmount after an error. This is likely a bug in ' +
           'React. Please file an issue.',
       );
+      // 到达root节点，属于默认处理，ShouldCapture肯定存在
       workInProgress.effectTag = (effectTag & ~ShouldCapture) | DidCapture;
       return workInProgress;
     }

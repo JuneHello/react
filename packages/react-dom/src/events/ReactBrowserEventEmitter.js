@@ -134,7 +134,7 @@ export function listenTo(
 
   for (let i = 0; i < dependencies.length; i++) {
     const dependency = dependencies[i];
-    if (!listeningSet.has(dependency)) {
+    if (!listeningSet.has(dependency)) { // 当前dom没有注册当前监听事件，进行事件绑定
       switch (dependency) {
         case TOP_SCROLL:
           trapCapturedEvent(TOP_SCROLL, mountAt);

@@ -28,8 +28,8 @@ export function resolveDefaultProps(Component: any, baseProps: Object): Object {
 }
 
 export function readLazyComponentType<T>(lazyComponent: LazyComponent<T>): T {
-  const status = lazyComponent._status;
-  const result = lazyComponent._result;
+  const status = lazyComponent._status; // 组件加载状态
+  const result = lazyComponent._result; // 加载结果，Component or Error
   switch (status) {
     case Resolved: {
       const Component: T = result;
@@ -81,7 +81,7 @@ export function readLazyComponentType<T>(lazyComponent: LazyComponent<T>): T {
           throw lazyComponent._result;
       }
       lazyComponent._result = thenable;
-      throw thenable;
+      throw thenable; // 这里直接抛错出去,为了打断子树渲染
     }
   }
 }

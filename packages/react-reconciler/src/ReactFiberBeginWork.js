@@ -721,6 +721,7 @@ function updateClassComponent(
       nextProps,
       renderExpirationTime,
     );
+    // 加载
     mountClassInstance(
       workInProgress,
       Component,
@@ -1036,7 +1037,7 @@ function mountLazyComponent(
   // We can't start a User Timing measurement with correct label yet.
   // Cancel and resume right after we know the tag.
   cancelWorkTimer(workInProgress);
-  let Component = readLazyComponentType(elementType);
+  let Component = readLazyComponentType(elementType); // 参数为lazyComponent？？
   // Store the unwrapped component in the type.
   workInProgress.type = Component;
   const resolvedTag = (workInProgress.tag = resolveLazyComponentTag(Component));
@@ -2116,13 +2117,16 @@ function bailoutOnAlreadyFinishedWork(
   // Check if the children have any pending work.
   const childExpirationTime = workInProgress.childExpirationTime;
   if (childExpirationTime < renderExpirationTime) {
+    // 他的子树上没有更新
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
     // a work-in-progress set. If so, we need to transfer their effects.
+    // 这里return null代表着next是null，就直接completeUnitOfWork了，就不解析child了。
     return null;
   } else {
     // This fiber doesn't have work, but its subtree does. Clone the child
     // fibers and continue.
+    // 复用当前Fiber对象，然后返回他的子节点，因为他的子节点还是有工作要做的
     cloneChildFibers(current, workInProgress);
     return workInProgress.child;
   }
@@ -2222,6 +2226,7 @@ function beginWork(
 
     if (
       oldProps !== newProps ||
+      // hasLegacyContextChanged() 如果当前节点和他的父节点都没有老的context api,就为true
       hasLegacyContextChanged() ||
       // Force a re-render if the implementation changed due to hot reload:
       (__DEV__ ? workInProgress.type !== current.type : false)

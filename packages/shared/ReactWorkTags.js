@@ -36,7 +36,7 @@ export const IndeterminateComponent = 2; // Before we know whether it is functio
 export const HostRoot = 3; // ReactDOM.render()时的根节点 Root of a host tree. Could be nested inside another node.
 export const HostPortal = 4; // A subtree. Could be an entry point to a different renderer.
 // HostComponent是 React中最常见的抽象节点，是ClassComponent的组成部分。具体的实现取决于React运行的平台。
-// 在浏览器环境下就代表DOM节点，可以理解为所谓的虚拟DOM节点。HostComponent中的Host就代码这种组件的具体操作逻辑是由Host环境注入的。
+// 在浏览器环境下就代表DOM节点，例如：span，div等，可以理解为所谓的虚拟DOM节点。HostComponent中的Host就代码这种组件的具体操作逻辑是由Host环境注入的。
 export const HostComponent = 5;
 export const HostText = 6;
 export const Fragment = 7;

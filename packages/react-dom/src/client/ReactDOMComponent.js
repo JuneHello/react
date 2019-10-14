@@ -337,7 +337,7 @@ function setInitialDOMProperties(
         // show within the <textarea> until it has been focused and blurred again.
         // https://github.com/facebook/react/issues/6731#issuecomment-254874553
         const canSetTextContent = tag !== 'textarea' || nextProp !== '';
-        if (canSetTextContent) {
+        if (canSetTextContent) { // 设置文本内容
           setTextContent(domElement, nextProp);
         }
       } else if (typeof nextProp === 'number') {
@@ -353,14 +353,14 @@ function setInitialDOMProperties(
       // We could have excluded it in the property list instead of
       // adding a special case here, but then it wouldn't be emitted
       // on server rendering (but we *do* want to emit it in SSR).
-    } else if (registrationNameModules.hasOwnProperty(propKey)) {
+    } else if (registrationNameModules.hasOwnProperty(propKey)) { // dom事件，鼠标键盘事件
       if (nextProp != null) {
         if (__DEV__ && typeof nextProp !== 'function') {
           warnForInvalidEventListener(propKey, nextProp);
         }
-        ensureListeningTo(rootContainerElement, propKey);
+        ensureListeningTo(rootContainerElement, propKey); //进行绑定事件
       }
-    } else if (nextProp != null) {
+    } else if (nextProp != null) { // 不需要特殊处理的属性
       setValueForProperty(domElement, propKey, nextProp, isCustomComponentTag);
     }
   }
@@ -458,6 +458,7 @@ export function createElement(
       }
     }
   } else {
+    // 不是html标签的，创建一个具有指定的命名空间URI和限定名称的元素
     domElement = ownerDocument.createElementNS(namespaceURI, type);
   }
 
@@ -492,7 +493,7 @@ export function createTextNode(
     text,
   );
 }
-
+// 对应不同标签绑定事件
 export function setInitialProperties(
   domElement: Element,
   tag: string,
@@ -588,6 +589,7 @@ export function setInitialProperties(
 
   assertValidProps(tag, props);
 
+  // 设置属性和事件绑定
   setInitialDOMProperties(
     tag,
     domElement,
@@ -641,6 +643,7 @@ export function diffProperties(
   let lastProps: Object;
   let nextProps: Object;
   switch (tag) {
+    // 根据不同的标签，提出新老props准备比较
     case 'input':
       lastProps = ReactDOMInputGetHostProps(domElement, lastRawProps);
       nextProps = ReactDOMInputGetHostProps(domElement, nextRawProps);
@@ -679,13 +682,14 @@ export function diffProperties(
   let propKey;
   let styleName;
   let styleUpdates = null;
+  // 第一次遍历老 lastProps 把要删除的属性都设置为空
   for (propKey in lastProps) {
     if (
       nextProps.hasOwnProperty(propKey) ||
       !lastProps.hasOwnProperty(propKey) ||
       lastProps[propKey] == null
     ) {
-      continue;
+      continue; // lastProps不存在，是nextProps新增加属性
     }
     if (propKey === STYLE) {
       const lastStyle = lastProps[propKey];
@@ -719,6 +723,7 @@ export function diffProperties(
       (updatePayload = updatePayload || []).push(propKey, null);
     }
   }
+  // 第二次遍历新 props
   for (propKey in nextProps) {
     const nextProp = nextProps[propKey];
     const lastProp = lastProps != null ? lastProps[propKey] : undefined;
@@ -727,7 +732,7 @@ export function diffProperties(
       nextProp === lastProp ||
       (nextProp == null && lastProp == null)
     ) {
-      continue;
+      continue; // 新老属性没有变化
     }
     if (propKey === STYLE) {
       if (__DEV__) {
@@ -770,7 +775,7 @@ export function diffProperties(
           }
           updatePayload.push(propKey, styleUpdates);
         }
-        styleUpdates = nextProp;
+        styleUpdates = nextProp; // 在末尾处push了updatePayload
       }
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
       const nextHtml = nextProp ? nextProp[HTML] : undefined;
@@ -812,6 +817,7 @@ export function diffProperties(
     } else {
       // For any other property we always add it to the queue and then we
       // filter it out using the whitelist during the commit.
+      // 最后把其他属性添加，形成[key1,value1,key2,value2,...]的数组
       (updatePayload = updatePayload || []).push(propKey, nextProp);
     }
   }
@@ -821,7 +827,7 @@ export function diffProperties(
     }
     (updatePayload = updatePayload || []).push(STYLE, styleUpdates);
   }
-  return updatePayload;
+  return updatePayload; // 形式为[key1,value1,key2,value2,...]的数组
 }
 
 // Apply the diff.
@@ -1028,7 +1034,7 @@ export function diffHydratedProperties(
         }
       }
     } else if (registrationNameModules.hasOwnProperty(propKey)) {
-      if (nextProp != null) {
+      if (nextProp != null) { // 需要监听的事件
         if (__DEV__ && typeof nextProp !== 'function') {
           warnForInvalidEventListener(propKey, nextProp);
         }

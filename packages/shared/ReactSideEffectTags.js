@@ -30,6 +30,6 @@ export const LifecycleEffectMask = /*   */ 0b001110100100;
 
 // Union of all host effects
 export const HostEffectMask = /*        */ 0b001111111111;
-
+// 报错的节点增加 Incomplete
 export const Incomplete = /*            */ 0b010000000000;
 export const ShouldCapture = /*         */ 0b100000000000;

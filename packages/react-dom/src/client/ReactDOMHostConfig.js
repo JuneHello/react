@@ -301,6 +301,7 @@ export function createInstance(
     rootContainerInstance,
     parentNamespace,
   );
+  // 在 dom节点对象上记录此次创建的 fiber 和 props 信息
   precacheFiberNode(internalInstanceHandle, domElement);
   updateFiberProps(domElement, props);
   return domElement;
@@ -347,6 +348,7 @@ export function prepareUpdate(
       validateDOMNesting(null, string, ownAncestorInfo);
     }
   }
+  // 根据不同标签节点提取新老标签的 props 准备比较
   return diffProperties(
     domElement,
     type,

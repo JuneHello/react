@@ -126,6 +126,7 @@ let updateHostText;
 if (supportsMutation) {
   // Mutation mode
 
+  // 构建 dom 树， 都是 append 第一层 child 和 child.sibling，不会 append 嵌套的，嵌套的会在他自己是 workInProgress 时 append
   appendAllChildren = function(
     parent: Instance,
     workInProgress: Fiber,
@@ -137,19 +138,20 @@ if (supportsMutation) {
     let node = workInProgress.child;
     while (node !== null) {
       if (node.tag === HostComponent || node.tag === HostText) {
+        // dom标签或者文本内容执行appendChild
         appendInitialChild(parent, node.stateNode);
       } else if (node.tag === HostPortal) {
         // If we have a portal child, then we don't want to traverse
         // down its children. Instead, we'll get insertions from each child in
         // the portal directly.
-      } else if (node.child !== null) {
+      } else if (node.child !== null) { // 当前节点不是dom标签或者文本，但是有子节点
         node.child.return = node;
         node = node.child;
         continue;
       }
 
       if (node === workInProgress) {
-        return;
+        return; // 此时node已经经过appendChild挂载了，
       }
       while (node.sibling === null) {
         if (node.return === null || node.return === workInProgress) {
@@ -158,7 +160,7 @@ if (supportsMutation) {
         node = node.return;
       }
       node.sibling.return = node.return;
-      node = node.sibling;
+      node = node.sibling; // 只对node的sibling兄弟节点进行遍历
     }
   };
 
@@ -523,6 +525,10 @@ if (supportsMutation) {
 }
 
 // completeWork主要是完成reconciliation阶段的扫尾工作，重点是对HostComponent的props进行diff，并标记更新
+// pop 出各种 context 相关功能
+// 对 HostComponent 进行初始化（tag 为 HostComponent 表示普通 dom 节点，如: div）
+// 初始化监听事件
+// 对大部分 tag 不进行操作或者只是 pop context，只有 HostComponent, HostText, SuspenseComponent 有操作
 function completeWork(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -569,6 +575,7 @@ function completeWork(
       const rootContainerInstance = getRootHostContainer();
       const type = workInProgress.type;
       if (current !== null && workInProgress.stateNode != null) {
+        // update过程
         updateHostComponent(
           current,
           workInProgress,
@@ -581,6 +588,7 @@ function completeWork(
           markRef(workInProgress);
         }
       } else {
+        // 首次渲染
         if (!newProps) {
           invariant(
             workInProgress.stateNode !== null,
@@ -596,7 +604,7 @@ function completeWork(
         // "stack" as the parent. Then append children as we go in beginWork
         // or completeWork depending on we want to add then top->down or
         // bottom->up. Top->down is faster in IE11.
-        let wasHydrated = popHydrationState(workInProgress);
+        let wasHydrated = popHydrationState(workInProgress); // wasHydrated为false的时候，为浏览器环境
         if (wasHydrated) {
           // TODO: Move this and createInstance step into the beginPhase
           // to consolidate.
@@ -612,6 +620,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
+          // 浏览器环境, 创建type的dom
           let instance = createInstance(
             type,
             newProps,

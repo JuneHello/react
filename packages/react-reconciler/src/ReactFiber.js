@@ -245,7 +245,7 @@ function FiberNode(
   this.tag = tag; // 标记不同的组件类型，不同的更新方式
   this.key = key;
   this.elementType = null; // createElement 第一个参数，组件 或者 标签
-  this.type = null;//  记录异步组件 resolved 后是 class 还是 function 组件
+  this.type = null;// 对于类组件，它指向类的构造方法；对于DOM元素，它具体为HTML标签, 记录异步组件 resolved 后是 class 还是 function 组件
   // stateNode用于记录当前 Fiber 所对应的真实 DOM 节点 或者 当前虚拟组件的实例，这么做的原因第一是为了实现 Ref ，第二是为了实现 DOM 的跟踪，function 没有实例就没 stateNode
   this.stateNode = null;
 
@@ -486,7 +486,7 @@ export function createHostRootFiber(tag: RootTag): Fiber {
 
   return createFiber(HostRoot, null, null, mode); // HostRoot = 3
 }
-
+// 映射了一个React元素到相对应fiber节点类型
 export function createFiberFromTypeAndProps(
   type: any, // React$ElementType
   key: null | string,

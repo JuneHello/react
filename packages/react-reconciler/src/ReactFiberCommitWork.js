@@ -406,7 +406,7 @@ function commitLifeCycles(
     case ClassComponent: {
       const instance = finishedWork.stateNode;
       if (finishedWork.effectTag & Update) {
-        if (current === null) {
+        if (current === null) { // 为第一次加载
           startPhaseTimer(finishedWork, 'componentDidMount');
           // We could update instance props and state here,
           // but instead we rely on them being set during last render.
@@ -473,7 +473,7 @@ function commitLifeCycles(
               );
             }
           }
-          instance.componentDidUpdate(
+          instance.componentDidUpdate( // componentDidUpdate(prevProps, prevState, snapshot)
             prevProps,
             prevState,
             instance.__reactInternalSnapshotBeforeUpdate,
@@ -550,6 +550,7 @@ function commitLifeCycles(
       // (eg DOM renderer may schedule auto-focus for inputs and form controls).
       // These effects should only be committed when components are first mounted,
       // aka when there is no current/alternate.
+      // 这部分主要是处理初次加载的 HostComponent 的获取焦点问题，如果组件有autoFocus这个 props ，就会获取焦点
       if (current === null && finishedWork.effectTag & Update) {
         const type = finishedWork.type;
         const props = finishedWork.memoizedProps;
@@ -793,7 +794,7 @@ function commitUnmount(current: Fiber): void {
     }
   }
 }
-
+// 一个递归的过程，在commitNestedUnmounts会对每个子节点调用commitUnmount
 function commitNestedUnmounts(root: Fiber): void {
   // While we're inside a removed host node we don't want to call
   // removeChild on the inner nodes because they're removed by the top
@@ -948,6 +949,7 @@ function getHostSibling(fiber: Fiber): ?Instance {
       }
       // If we don't have a child, try the siblings instead.
       // We also skip portals because they are not part of this host tree.
+      // 对于HostPortal不需要操作，因为这其实是他的子节点插入到HostPortal.containerInfo的过程
       if (node.child === null || node.tag === HostPortal) {
         continue siblings;
       } else {
@@ -969,6 +971,7 @@ function commitPlacement(finishedWork: Fiber): void {
   }
 
   // Recursively insert all host nodes into the parent.
+  // 从父链上找到第一个具有container的节点或者是HostComponent
   const parentFiber = getHostParentFiber(finishedWork);
 
   // Note: these two variables *must* always be updated together.
@@ -976,6 +979,7 @@ function commitPlacement(finishedWork: Fiber): void {
   let isContainer;
 
   switch (parentFiber.tag) {
+    // 获取到对应的 DomElement 实例
     case HostComponent:
       parent = parentFiber.stateNode;
       isContainer = false;
@@ -1002,7 +1006,7 @@ function commitPlacement(finishedWork: Fiber): void {
     parentFiber.effectTag &= ~ContentReset;
   }
 
-  const before = getHostSibling(finishedWork);
+  const before = getHostSibling(finishedWork); // 找到当前要执行插入的节点的现有的第一个右侧节点，如果这个方法返回null，则会直接调用parent.appendChild
   // We only have the top Fiber that was inserted but we need to recurse down its
   // children to find all the terminal nodes.
   let node: Fiber = finishedWork;
@@ -1221,7 +1225,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         const updatePayload: null | UpdatePayload = (finishedWork.updateQueue: any);
         finishedWork.updateQueue = null;
         if (updatePayload !== null) {
-          commitUpdate(
+          commitUpdate( // ReactDOMHostConfig.js中，为何会对updatePayload进行for循环
             instance,
             updatePayload,
             type,

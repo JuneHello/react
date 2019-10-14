@@ -776,6 +776,7 @@ function renderRoot(
 
   // If the root or expiration time have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
+  // 如果有新的更新进来，则势必root or expiration time会变化，那么肯定需要重置变量
   if (root !== workInProgressRoot || expirationTime !== renderExpirationTime) {
     prepareFreshStack(root, expirationTime);
     startWorkOnPendingInteraction(root, expirationTime);
@@ -847,6 +848,7 @@ function renderRoot(
           // because there's no ancestor that can handle it; the root is
           // supposed to capture all errors that weren't caught by an error
           // boundary.
+          // 更新时出现致命错误
           prepareFreshStack(root, expirationTime);
           workPhase = prevWorkPhase;
           throw thrownValue;
@@ -1093,12 +1095,14 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
     next = beginWork(current, unitOfWork, renderExpirationTime);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
+    // beginWork进行节点操作，以及创建子节点，子节点会返回成为next
     next = beginWork(current, unitOfWork, renderExpirationTime);
   }
 
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   // 如果next不为空，就返回进入下一个performUnitOfWork，否则就进入completeUnitOfWork，next为空的时候会结束递归
+  // 如果next不存在，说明当前节点向下遍历子节点已经到底了，说明这个子树侧枝已经遍历完，可以完成这部分工作了
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     next = completeUnitOfWork(unitOfWork);
@@ -1108,7 +1112,7 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   return next;
 }
 
-// 先将当前Fiber元素转换为真实DOM节点，然后在看有无兄弟节点，若有则返回给上层函数处理完后再调用此函数进行转换；否则查看有无父节点，若有则转换父节点
+// 先将当前Fiber元素转换为真实DOM节点，然后在看有无兄弟节点，若有则返回给上层函数beginWork处理，处理完后再调用此函数进行转换；否则查看有无父节点，若有则转换父节点
 function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1122,13 +1126,14 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
 
     // Check if the work completed or if something threw.
     if ((workInProgress.effectTag & Incomplete) === NoEffect) {
+      // 没有报错的处理流程
       setCurrentDebugFiberInDEV(workInProgress);
       let next;
       if (
         !enableProfilerTimer ||
         (workInProgress.mode & ProfileMode) === NoMode
       ) {
-        next = completeWork(current, workInProgress, renderExpirationTime);
+        next = completeWork(current, workInProgress, renderExpirationTime); // 只有SuspenseComponent有return workInProgress
       } else {
         startProfilerTimer(workInProgress);
         next = completeWork(current, workInProgress, renderExpirationTime);
@@ -1175,6 +1180,7 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
         // committed.
         if (effectTag > PerformedWork) {
           if (returnFiber.lastEffect !== null) {
+            // ???
             returnFiber.lastEffect.nextEffect = workInProgress;
           } else {
             returnFiber.firstEffect = workInProgress;
@@ -1220,17 +1226,18 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
       }
       stopWorkTimer(workInProgress);
 
+      // next === null
       if (returnFiber !== null) {
         // Mark the parent fiber as incomplete and clear its effect list.
         returnFiber.firstEffect = returnFiber.lastEffect = null;
-        returnFiber.effectTag |= Incomplete;
+        returnFiber.effectTag |= Incomplete; // 标记父节点
       }
     }
 
     const siblingFiber = workInProgress.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
-      // 继续进入performUnitOfWork循环
+      // 继续进入performUnitOfWork循环，继续beginWork
       return siblingFiber;
     }
     // Otherwise, return to the parent
@@ -1243,12 +1250,14 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
   }
   return null;
 }
-
+// 在 completeWork 完成节点更新后执行
+// childExpirationTime 来表示当前节点所有子节点中最高的更新的优先级
 function resetChildExpirationTime(completedWork: Fiber) {
   if (
     renderExpirationTime !== Never &&
     completedWork.childExpirationTime === Never
   ) {
+    // 当前有更新，当前子节点没有更新
     // The children of this component are hidden. Don't bubble their
     // expiration times.
     return;
@@ -1383,6 +1392,7 @@ function commitRootImpl(root) {
 
   // Get the list of effects.
   let firstEffect;
+  // 在遍历之前，由于初始化的时候，由于 (HostRoot)FiberNode.effectTag为Callback(初始化回调))，会先将 finishedWork 放到链表尾部
   if (finishedWork.effectTag > PerformedWork) {
     // A fiber's effect list consists only of its children, not itself. So if
     // the root has an effect, we need to add it to the end of the list. The
@@ -1432,6 +1442,7 @@ function commitRootImpl(root) {
         }
       } else {
         try {
+        // 处理getSnapshotBeforeUpdate方法,提交Snapshot
           commitBeforeMutationEffects();
         } catch (error) {
           invariant(nextEffect !== null, 'Should be working on an effect.');
@@ -1462,6 +1473,7 @@ function commitRootImpl(root) {
         }
       } else {
         try {
+          // 提交HostComponent的 side effect
           commitMutationEffects();
         } catch (error) {
           invariant(nextEffect !== null, 'Should be working on an effect.');
@@ -1477,6 +1489,7 @@ function commitRootImpl(root) {
     // the mutation phase, so that the previous tree is still current during
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
+    // 在 DomElement 副作用处理完毕之后，意味着之前讲的workInProgress已经完成任务，翻身当主人，成为下次修改过程的current
     root.current = finishedWork;
 
     // The next phase is the layout phase, where we call effects that read
@@ -1501,6 +1514,7 @@ function commitRootImpl(root) {
         }
       } else {
         try {
+          // 提交所有组件的生命周期
           commitLayoutEffects(root, expirationTime);
         } catch (error) {
           invariant(nextEffect !== null, 'Should be working on an effect.');
@@ -1600,7 +1614,7 @@ function commitRootImpl(root) {
   flushSyncCallbackQueue();
   return null;
 }
-
+// 提交Snapshot
 function commitBeforeMutationEffects() {
   while (nextEffect !== null) {
     if ((nextEffect.effectTag & Snapshot) !== NoEffect) {
@@ -1615,7 +1629,7 @@ function commitBeforeMutationEffects() {
     nextEffect = nextEffect.nextEffect;
   }
 }
-
+// 对作用于HostComponent上的所有side effect进行commit
 function commitMutationEffects() {
   // TODO: Should probably move the bulk of this function to commitWork.
   while (nextEffect !== null) {
@@ -1640,7 +1654,7 @@ function commitMutationEffects() {
     // switch on that value.
     let primaryEffectTag = effectTag & (Placement | Update | Deletion);
     switch (primaryEffectTag) {
-      case Placement: {
+      case Placement: {// 挂载节点
         commitPlacement(nextEffect);
         // Clear the "placement" from effect tag so that we know that this is
         // inserted, before any life-cycles like componentDidMount gets called.
@@ -1650,7 +1664,7 @@ function commitMutationEffects() {
         break;
       }
       case PlacementAndUpdate: {
-        // Placement
+        // Placement 插入（ Placement ）流程
         commitPlacement(nextEffect);
         // Clear the "placement" from effect tag so that we know that this is
         // inserted, before any life-cycles like componentDidMount gets called.

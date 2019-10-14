@@ -737,7 +737,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return knownKeys;
   }
 
-  // isArray(newChildren)，reconcileChildrenArray返回的也是一个节点，返回diff完毕的新的fiberNode链表。由于是链表结构，知道第一个节点，就能知道整个链路。
+  // isArray(newChildren)，返回的也是一个节点，返回diff完毕的新的fiberNode链表。由于是链表结构，知道第一个节点，就能知道整个链路。
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -862,7 +862,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     // Add all children to a key map for quick lookups.
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
 
-    // 遍历新链，从老链中找和新链key相同的fiber，更新成newfiber
+    // 遍历新链，从老链中找和新链key相同的fiber，更新成newfiber，找不到就新建newfiber
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
       const newFiber = updateFromMap(
@@ -1132,6 +1132,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     const key = element.key;
     let child = currentFirstChild;
     while (child !== null) {
+      // 第一个while循环是找到老的children和新的children中第一个key和节点类型相同的节点，直接复用这个节点，然后删除老的children中其他的（我们无法保证新的children是单个节点的时候老的children也是单个的，所以要用遍历)
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
       if (child.key === key) {
